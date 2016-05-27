@@ -18,6 +18,7 @@
 <script>
 
 var heroList;
+var patch;
 function getBestHeroes(){
 	var pickedHeroes=[];
 	for(var i=1;i<6;i++){
@@ -46,14 +47,17 @@ function getBestHeroes(){
 
 function updateHeroData(){
 	if(confirm("Are you sure? This will take up to 10 minutes.")){
-		getHeroData("pudge",true);
+		patch=prompt("Enter the patch you want to sample data from.","6.87c");
+		if(patch!=null){
+			getHeroData("pudge",true);
+		}
 	}
 }
 var heroNames=[];
 var index=0;
 function getHeroData(hero,seed){
 	$.ajax({
-	    url: "http://www.dotabuff.com/heroes/"+hero+"/matchups?date=patch_6.87",
+	    url: "http://www.dotabuff.com/heroes/"+hero+"/matchups?date=patch_"+patch,
 	    dataType: 'text',
 	    success: function(data){
 	        var elements=$("<div>").html(data)[0].getElementsByTagName("tbody")[0].getElementsByTagName("tr");
