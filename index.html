@@ -1,93 +1,153 @@
-<html>
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Lynxis</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+  <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+</head>
+<style>
+body { padding-top: 70px; }
+</style>
 <body>
-	Heroes:<br>
-	Enter without capital letters or symbols, replace spaces with hyphens.
-	<form>
-		<input type="text" id="hero1"><br>
-		<input type="text" id="hero2"><br>
-		<input type="text" id="hero3"><br>
-		<input type="text" id="hero4"><br>
-		<input type="text" id="hero5">
+
+<nav class="navbar navbar-inverse navbar-fixed-top">
+  <div class="container-fluid">
+    <div class="navbar-header">
+      <a class="navbar-brand" href="/">Lynxis.org</a>
+    </div>
+    <ul class="nav navbar-nav">
+      <li><a href="/">Home</a></li>
+      <li><a href="/features">Features</a></li>
+      <li><a href="/howto">Instructions</a></li>
+    </ul>
+    <ul class="nav navbar-nav navbar-right">
+      <li class="dropdown">
+        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Other Projects<span class="caret"></span></a>
+        <ul class="dropdown-menu">
+          <li><a href="/projects/Vector-Playground">Vector Sandbox</a></li>
+          <li class="active"><a href="/projects/Dota2-Drafter">Dota 2 Drafter</a></li>
+        </ul>
+      </li>
+      <li><a href="/about">About</a></li>
+      <li><a href="/contact">Contact</a></li>
+    </ul>
+  </div>
+</nav>
+
+<div class="container">
+	<h2>Dota 2 Hero Drafter</h2>
+	<p>Input heroes selected by enemy team. Enter without capital letters or symbols and replace spaces with hyphens.</p>
+	<form role="form">
+		<div class="form-group">
+			<label for="hero1">Hero 1:</label>
+			<input type="text" class="form-control" id="hero1">
+		</div>
+		<div class="form-group">
+			<label for="hero2">Hero 2:</label>
+			<input type="text" class="form-control" id="hero2">
+		</div>
+		<div class="form-group">
+			<label for="hero3">Hero 3:</label>
+			<input type="text" class="form-control" id="hero3">
+		</div>
+		<div class="form-group">
+			<label for="hero4">Hero 4:</label>
+			<input type="text" class="form-control" id="hero4">
+		</div>
+		<div class="form-group">
+			<label for="hero5">Hero 5:</label>
+			<input type="text" class="form-control" id="hero5">
+		</div>
+		<button type="button" class="btn btn-primary" onclick="getBestHeroes()">Submit Data</button>
+		<button type="button" class="btn btn-primary" onclick="updateHeroData()">Update Stored Data</button>
 	</form>
-	<button type="button" onclick="getBestHeroes()">Submit Data</button>
-	<button type="button" onclick="updateHeroData()">Update Stored Data</button>
-	<br><br><br>
-	<table></table>
+</div>
+<br><br>
+<div class="container">
+	<table class="table table-condensed table-hover">
+		<thead>
+			<tr>
+				<th>Hero</th>
+				<th>Net Advantage</th>
+			</tr>
+		</thead>
+		<tbody>
+		</tbody>
+	</table>
+</div>
 </body>
 <script>
 
 var heroList;
 var patch;
-function getBestHeroes(){
-	var pickedHeroes=[];
-	for(var i=1;i<6;i++){
-		var heroName=document.getElementById("hero"+i).value;
-		if(heroName!=""){
+function getBestHeroes () {
+	var pickedHeroes = [];
+	for (var i = 1; i < 6; i++) {
+		var heroName = document.getElementById("hero" + i).value;
+		if (heroName != "") {
 			pickedHeroes.push(heroName);
 		}
 	}
 
-	$.post("winrateWriter.php",{
+	$.post("winrateWriter.php", {
 		data:JSON.stringify(pickedHeroes),
 		type:"in"
 	},
-	function(data,status){
-		heroList=JSON.parse(data);
-		$("table").empty();
-		for(name in heroList){
-			var advantage=-1*heroList[name];
-			var line=$("<tr></tr>");
+	function (data,status) {
+		heroList = JSON.parse(data);
+		$("tbody").empty();
+		for (name in heroList) {
+			var advantage = -1 * heroList[name];
+			var line = $("<tr></tr>");
 			line.append($("<td></td>").html(name));
 			line.append($("<td></td>").html(advantage));
-			$("table").append(line);
+			if (advantage >= 2.5) { line.attr("class", "success") }
+			if (advantage < 2.5 && advantage > -2.5) { line.attr("class", "info") }
+			if (advantage <= -2.5) { line.attr("class", "danger") }
+			$("tbody").append(line);
 		}
 	});
 }
 
 function updateHeroData(){
-	if(confirm("Are you sure? This will take up to 10 minutes.")){
-		patch=prompt("Enter the patch you want to sample data from.","6.87c");
-		if(patch!=null){
+	if (confirm("Are you sure? This will take up to 10 minutes.")) {
+		patch = prompt("Enter the date you want to sample data from.","patch_6.87c");
+		if (patch != null) {
 			getHeroData("pudge",true);
 		}
 	}
 }
-var heroNames=[];
-var index=0;
+var heroNames = [];
+var index = 0;
 function getHeroData(hero,seed){
 	$.ajax({
-	    url: "http://www.dotabuff.com/heroes/"+hero+"/matchups?date=patch_"+patch,
-	    dataType: 'text',
-	    success: function(data){
-	        var elements=$("<div>").html(data)[0].getElementsByTagName("tbody")[0].getElementsByTagName("tr");
-	        var heroData=[];
-	        for(i=0;i<elements.length;i++){
-	        	var tds=elements[i].getElementsByTagName("td");
-	        	var heroName=$(tds[0]).attr("data-value").toLowerCase().replace(/\s/g, "-").replace(/'/g, '');
-	        	var heroAdvantage=parseFloat($(tds[2]).attr("data-value"));
-	        	heroData.push({name:heroName,advantage:heroAdvantage});
-	        	if(seed){
-	        		heroNames.push(heroName);
-	        	}
-	        }
-	        $.post("winrateWriter.php",{
-	        	data:JSON.stringify(heroData),type:"out",name:hero
-	        },function(data,success){
-	        	if(index<111){
-	        		console.log("***********************************************************************");
-	        		console.log(index+1+"/111");
-	        		console.log("***********************************************************************");
-	        		getHeroData(heroNames[index],false);
-	        		index++;
-	        	}else{
-	        		console.log("***********************************************************************");
-	        		console.log("COMPLETE");
-	        		console.log("***********************************************************************");
-	        	}
-	        }
-	        );
-	    }
+		url: "http://www.dotabuff.com/heroes/" + hero + "/matchups?date=" + patch,
+		dataType: 'text',
+		success: function (data) {
+			var elements=$("<div>").html(data)[0].getElementsByTagName("tbody")[0].getElementsByTagName("tr");
+			var heroData=[];
+			for (i = 0; i < elements.length; i++) {
+				var tds = elements[i].getElementsByTagName("td");
+				var heroName = $(tds[0]).attr("data-value").toLowerCase().replace(/\s/g, "-").replace(/'/g, '');
+				var heroAdvantage = parseFloat($(tds[2]).attr("data-value"));
+				heroData.push({name: heroName, advantage: heroAdvantage});
+				if (seed) { heroNames.push(heroName) }
+			}
+			$.post("winrateWriter.php", {
+				data:JSON.stringify(heroData), type:"out", name:hero
+			}, function (data, success) {
+				if (index < 111) {
+					console.log("***********************************************************************");
+					console.log(index + 1 + "/111");
+					console.log("***********************************************************************");
+					getHeroData(heroNames[index],false);
+					index++;
+				}
+			});
+		}
 	});
 }
 
